@@ -1,0 +1,40 @@
+{
+  "name": "opti-llm",
+  "version": "1.0.0",
+  "description": "Semantic caching SDK for LLM cost reduction using Qdrant",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "prepare": "npm run build"
+  },
+  "keywords": ["llm", "caching", "semantic", "qdrant", "ai"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@qdrant/js-client-rest": "^1.11.0",
+    "openai": "^4.72.0",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/uuid": "^10.0.0",
+    "tsx": "^4.19.1",
+    "typescript": "^5.5.4"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  }
+}

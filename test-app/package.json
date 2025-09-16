@@ -1,0 +1,15 @@
+{
+  "name": "opti-llm-test-app",
+  "private": true,
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "openai": "^4.72.0",
+    "opti-llm": "file:.."
+  }
+}
