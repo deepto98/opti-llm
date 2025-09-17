@@ -1,6 +1,7 @@
 import express from 'express';
 import OpenAI from 'openai';
 import { createOptiLLM } from 'opti-llm';
+import { WebSocketServer } from 'ws';
 import dotenv from 'dotenv';
 
 // Load environment variables from .env file
@@ -97,6 +98,22 @@ app.post('/chat', async (req, res) => {
   }
 });
 
+// Suggest endpoint (HTTP) for typeahead suggestions
+app.get('/suggest', async (req, res) => {
+  try {
+    const text = String(req.query.q || '');
+    const tenantId = String(req.query.tenantId || 'default');
+    const limit = Number(req.query.limit || 5);
+    const minSimilarity = Number(req.query.minSimilarity || 0.7);
+    if (!text) return res.json({ items: [] });
+    const items = await optiLLM.suggest({ text, tenantId, limit, minSimilarity });
+    res.json({ items });
+  } catch (err) {
+    console.error('Suggest error:', err);
+    res.status(500).json({ error: String(err?.message || err) });
+  }
+});
+
 // Test endpoint
 app.get('/test', async (req, res) => {
   try {
@@ -136,4 +153,45 @@ app.listen(PORT, () => {
   console.log(`🔧 Environment: ${process.env.OPENAI_API_KEY ? 'OpenAI' : 'Local'} embeddings`);
   console.log(`🗄️  Qdrant: ${process.env.QDRANT_URL || 'http://localhost:6333'}`);
   console.log(`🔑 Qdrant API Key: ${process.env.QDRANT_API_KEY ? 'Configured' : 'Not set (using local)'}`);
+});
+
+// WebSocket for live suggestions: ws://host/ws/suggest?tenantId=default
+const wss = new WebSocketServer({ noServer: true });
+
+// Upgrade HTTP server to handle WS route
+const httpServer = app.listen(Number(process.env.WS_PORT || PORT) + 1);
+httpServer.on('upgrade', (req, socket, head) => {
+  const { url } = req;
+  if (url && url.startsWith('/ws/suggest')) {
+    wss.handleUpgrade(req, socket, head, (ws) => {
+      wss.emit('connection', ws, req);
+    });
+  } else {
+    socket.destroy();
+  }
+});
+
+wss.on('connection', (ws, req) => {
+  const searchParams = new URL(req.url, 'http://localhost').searchParams;
+  const tenantId = searchParams.get('tenantId') || 'default';
+  let lastText = '';
+  let closed = false;
+
+  ws.on('message', async (msg) => {
+    if (closed) return;
+    try {
+      const { text, limit = 5, minSimilarity = 0.7 } = JSON.parse(String(msg));
+      if (typeof text !== 'string') return;
+      if (text === lastText) return; // throttle duplicates
+      lastText = text;
+      const items = await optiLLM.suggest({ text, tenantId, limit, minSimilarity });
+      ws.send(JSON.stringify({ items }));
+    } catch (err) {
+      // ignore malformed input
+    }
+  });
+
+  ws.on('close', () => {
+    closed = true;
+  });
 });
