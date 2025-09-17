@@ -31,6 +31,36 @@ export class QdrantCache {
       });
       console.log(`Created Qdrant collection: ${this.collectionName}`);
     }
+
+    // Ensure payload indexes required for filtering and cleanup
+    await this.ensurePayloadIndexes();
+  }
+
+  private async ensurePayloadIndexes(): Promise<void> {
+    const createIndex = async (field_name: string, type: 'keyword' | 'integer' | 'float' | 'bool' | 'text') => {
+      try {
+        await this.client.createPayloadIndex(this.collectionName, {
+          field_name,
+          field_schema: { type },
+        } as any);
+      } catch (err) {
+        // Ignore if already exists or unsupported; log once
+        const msg = (err as Error)?.message ?? String(err);
+        if (!/already exists/i.test(msg)) {
+          // eslint-disable-next-line no-console
+          console.warn(`[opti-llm] payload index ensure warning for ${field_name}:`, msg);
+        }
+      }
+    };
+
+    // Common filters used by SDK
+    await createIndex('metadata.tenantId', 'keyword');
+    await createIndex('metadata.provider', 'keyword');
+    await createIndex('metadata.model', 'keyword');
+    await createIndex('metadata.userId', 'keyword');
+    // For cleanup and potential time-range queries
+    await createIndex('expiresAt', 'integer');
+    await createIndex('createdAt', 'integer');
   }
 
   async search(
