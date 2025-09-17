@@ -11,7 +11,7 @@
     "prepare": "npm run build"
   },
   "keywords": ["llm", "caching", "semantic", "qdrant", "ai"],
-  "author": "",
+  "author": "deepto98 <ddepp98@outlook.com>",
   "license": "MIT",
   "dependencies": {
     "@qdrant/js-client-rest": "^1.11.0",
