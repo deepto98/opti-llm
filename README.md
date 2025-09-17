@@ -4,6 +4,8 @@
 
 A lightweight TypeScript SDK for semantic caching of LLM responses using Qdrant vector database. Reduce costs and improve response times by caching semantically similar queries.
 
+[![Watch the demo](https://img.youtube.com/vi/FxUOhAjJoEA/0.jpg)](https://www.youtube.com/embed/FxUOhAjJoEA?si=21bRbGr0mGVgMo95)
+ 
 ## Features
 
 - 🚀 **Semantic Caching**: Cache LLM responses based on semantic similarity, not exact matches
