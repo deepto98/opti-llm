@@ -106,11 +106,19 @@ Run the included Express test app:
 cd test-app
 npm install
 
-# With OpenAI (recommended)
-OPENAI_API_KEY=your_key QDRANT_URL=http://localhost:6333 npm run dev
+# Setup environment variables
+cp env.example .env
+# Edit .env with your actual API keys
 
-# Or with local embeddings (for testing)
-QDRANT_URL=http://localhost:6333 npm run dev
+# Start the server
+npm run dev
+```
+
+Your `.env` file should contain:
+```bash
+OPENAI_API_KEY=your_openai_api_key
+QDRANT_URL=https://your-cluster.region.aws.cloud.qdrant.io
+QDRANT_API_KEY=your_qdrant_api_key
 ```
 
 Test endpoints:

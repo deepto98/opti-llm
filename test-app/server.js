@@ -1,6 +1,10 @@
 import express from 'express';
 import OpenAI from 'openai';
 import { createOptiLLM } from 'opti-llm';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
 
 const app = express();
 app.use(express.json());
@@ -8,6 +12,7 @@ app.use(express.json());
 // Initialize OptiLLM
 const optiLLM = createOptiLLM({
   qdrantUrl: process.env.QDRANT_URL || 'http://localhost:6333',
+  apiKey: process.env.QDRANT_API_KEY, // For Qdrant Cloud
   embedding: {
     provider: process.env.OPENAI_API_KEY ? 'openai' : 'local',
     apiKey: process.env.OPENAI_API_KEY,
@@ -129,4 +134,6 @@ app.listen(PORT, () => {
   console.log(`🚀 Test app running on http://localhost:${PORT}`);
   console.log(`📝 Try: curl -X POST http://localhost:${PORT}/chat -H "Content-Type: application/json" -d '{"prompt":"What is Redis?"}'`);
   console.log(`🔧 Environment: ${process.env.OPENAI_API_KEY ? 'OpenAI' : 'Local'} embeddings`);
+  console.log(`🗄️  Qdrant: ${process.env.QDRANT_URL || 'http://localhost:6333'}`);
+  console.log(`🔑 Qdrant API Key: ${process.env.QDRANT_API_KEY ? 'Configured' : 'Not set (using local)'}`);
 });

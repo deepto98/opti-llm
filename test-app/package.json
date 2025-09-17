@@ -10,6 +10,7 @@
   "dependencies": {
     "express": "^4.19.2",
     "openai": "^4.72.0",
-    "opti-llm": "file:.."
+    "opti-llm": "file:..",
+    "dotenv": "^16.4.5"
   }
 }
