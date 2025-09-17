@@ -1,6 +1,6 @@
 {
   "name": "opti-llm",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Semantic caching SDK for LLM cost reduction using Qdrant",
   "type": "module",
   "main": "dist/index.js",
@@ -10,7 +10,13 @@
     "dev": "tsx src/index.ts",
     "prepare": "npm run build"
   },
-  "keywords": ["llm", "caching", "semantic", "qdrant", "ai"],
+  "keywords": [
+    "llm",
+    "caching",
+    "semantic",
+    "qdrant",
+    "ai"
+  ],
   "author": "deepto98 <ddepp98@outlook.com>",
   "license": "MIT",
   "dependencies": {
