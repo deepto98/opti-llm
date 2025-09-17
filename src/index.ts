@@ -57,16 +57,19 @@ export class OptiLLM {
     const vector = await this.embedder.embed(prompt);
     
     // Build filter for tenant/user scoping
-    const filter: any = {};
+    let filter: any = undefined;
     if (metadata.tenantId) {
-      filter.must = filter.must || [];
-      filter.must.push({
-        match: { 'metadata.tenantId': metadata.tenantId }
-      });
+      filter = {
+        must: [{
+          key: 'metadata.tenantId',
+          match: { value: metadata.tenantId }
+        }]
+      };
     }
 
     // Search for similar cached results
     const threshold = policy?.minSimilarity ?? this.config.similarityThreshold;
+    console.log('Searching with filter:', JSON.stringify(filter, null, 2));
     const results = await this.cache.search(vector, 1, threshold, filter);
 
     // Check for valid cached result

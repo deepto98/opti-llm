@@ -39,21 +39,32 @@ export class QdrantCache {
     scoreThreshold = 0.8,
     filter?: any
   ): Promise<CachedResult[]> {
-    const results = await this.client.search(this.collectionName, {
+    const searchParams: any = {
       vector,
       limit,
       score_threshold: scoreThreshold,
       with_payload: true,
-      filter,
-    });
-
-    return results.map(result => ({
-      id: result.id as string,
-      response: result.payload?.response as string,
-      score: result.score || 0,
-      metadata: result.payload?.metadata || {},
-      createdAt: result.payload?.createdAt as number || Date.now(),
-    }));
+    };
+    
+    // Only add filter if it's defined and not empty
+    if (filter) {
+      searchParams.filter = filter;
+    }
+    
+    try {
+      const results = await this.client.search(this.collectionName, searchParams);
+      return results.map(result => ({
+        id: result.id as string,
+        response: result.payload?.response as string,
+        score: result.score || 0,
+        metadata: result.payload?.metadata || {},
+        createdAt: result.payload?.createdAt as number || Date.now(),
+      }));
+    } catch (error) {
+      console.error('Qdrant search error:', error);
+      console.error('Search params:', JSON.stringify(searchParams, null, 2));
+      throw error;
+    }
   }
 
   async store(
