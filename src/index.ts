@@ -1,6 +1,6 @@
 import { QdrantCache } from './qdrant.js';
 import { OpenAIEmbedding, LocalEmbedding } from './embedding.js';
-import type { OptiLLMConfig, CaptureOptions, EmbeddingProvider } from './types.js';
+import type { OptiLLMConfig, CaptureOptions, EmbeddingProvider, SuggestOptions, SuggestItem } from './types.js';
 
 export class OptiLLM {
   private cache: QdrantCache;
@@ -117,6 +117,27 @@ export class OptiLLM {
 
   async cleanup(): Promise<void> {
     await this.cache.cleanup();
+  }
+
+  // Suggest similar cached prompts/responses for typeahead usage
+  async suggest(options: SuggestOptions): Promise<SuggestItem[]> {
+    const { text, tenantId, limit = 5, minSimilarity = 0.7 } = options;
+    const vector = await this.embedder.embed(text);
+    let filter: any = undefined;
+    if (tenantId) {
+      filter = {
+        must: [{ key: 'metadata.tenantId', match: { value: tenantId } }],
+      };
+    }
+    const results = await this.cache.suggest(vector, limit, minSimilarity, filter);
+    return results.map(r => ({
+      id: r.id,
+      prompt: r.metadata?.prompt,
+      response: r.response,
+      score: r.score,
+      createdAt: r.createdAt,
+      metadata: r.metadata,
+    }));
   }
 }
 

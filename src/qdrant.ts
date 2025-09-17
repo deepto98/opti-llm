@@ -97,6 +97,15 @@ export class QdrantCache {
     }
   }
 
+  async suggest(
+    vector: number[],
+    limit = 5,
+    scoreThreshold = 0.7,
+    filter?: any
+  ): Promise<CachedResult[]> {
+    return this.search(vector, limit, scoreThreshold, filter);
+  }
+
   async store(
     vector: number[],
     response: string,

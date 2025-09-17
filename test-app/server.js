@@ -169,7 +169,7 @@ app.get('/', (req, res) => {
   <script>
     const port = ${port};
     const wsPort = ${wsPort};
-    const tenantId = ${JSON.stringify(tenantId)};
+    const tenantId = '${tenantId.replace(/'/g, "\\'")}';
     let ws;
     let wsReady = false;
     let debounceTimer;
@@ -195,10 +195,19 @@ app.get('/', (req, res) => {
         const li = document.createElement('li');
         const title = item.prompt || '[No prompt stored]';
         const score = typeof item.score === 'number' ? item.score.toFixed(3) : '—';
-        li.innerHTML = `${title} <span class="badge">sim ${score}</span>`;
+        li.innerHTML = title + ' <span class="badge">sim ' + score + '</span>';
         li.addEventListener('click', () => {
+          // Directly show cached response from suggestion without another /chat call
           document.getElementById('prompt').value = title;
-          document.getElementById('status').textContent = 'Selected a cached prompt; submit to reuse response.';
+          try {
+            const raw = item.response;
+            const parsed = (typeof raw === 'string' && raw.length && raw[0] === '"') ? JSON.parse(raw) : raw;
+            document.getElementById('response').textContent = parsed || String(raw);
+            document.getElementById('status').textContent = 'Served from cache (suggestion)';
+          } catch (e) {
+            document.getElementById('response').textContent = String(item.response);
+            document.getElementById('status').textContent = 'Served from cache (suggestion)';
+          }
         });
         ul.appendChild(li);
       }

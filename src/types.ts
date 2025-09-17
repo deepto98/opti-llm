@@ -36,3 +36,19 @@ export interface CachedResult {
 export interface EmbeddingProvider {
   embed(text: string): Promise<number[]>;
 }
+
+export interface SuggestOptions {
+  text: string;
+  tenantId?: string;
+  limit?: number;
+  minSimilarity?: number;
+}
+
+export interface SuggestItem {
+  id: string;
+  prompt?: string;
+  response?: string;
+  score: number;
+  createdAt: number;
+  metadata: any;
+}
