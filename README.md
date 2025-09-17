@@ -190,29 +190,4 @@ Based on proven semantic caching patterns from [Shuttle.dev's Qdrant guide](http
 
 MIT
 
-## Publish to npm
 
-1. Ensure your package metadata is correct in `package.json` (name, version, description, exports, files: `dist`, types, main).
-2. Build the library:
-```bash
-npm run build
-```
-3. (Optional) Verify the dist output works by installing locally in a sample app:
-```bash
-cd test-app && npm install && cd ..
-```
-4. Login to npm:
-```bash
-npm login
-```
-5. Bump version:
-```bash
-npm version patch   # or minor / major
-```
-6. Publish:
-```bash
-npm publish --access public
-```
-Notes:
-- If you use a scoped package name (e.g., `@your-org/opti-llm`), `--access public` is required for public packages.
-- The `prepare` script builds automatically when consumers install from git; for npm registry, the `dist/` is published from your machine.
