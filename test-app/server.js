@@ -9,6 +9,7 @@ dotenv.config();
 
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Initialize OptiLLM
 const optiLLM = createOptiLLM({
@@ -112,6 +113,126 @@ app.get('/suggest', async (req, res) => {
     console.error('Suggest error:', err);
     res.status(500).json({ error: String(err?.message || err) });
   }
+});
+
+// Demo UI (no framework)
+app.get('/', (req, res) => {
+  const port = Number(process.env.PORT || 3000);
+  const wsPort = Number(process.env.WS_PORT || port + 1);
+  const tenantId = 'default';
+  res.type('html').send(`<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OptiLLM Demo</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji'; margin: 24px; }
+    .row { display: flex; gap: 16px; align-items: flex-start; }
+    .column { flex: 1; min-width: 320px; }
+    textarea, input, button { font: inherit; }
+    textarea { width: 100%; height: 120px; padding: 8px; }
+    button { padding: 8px 12px; cursor: pointer; }
+    ul { list-style: none; padding-left: 0; }
+    li { padding: 6px 8px; border: 1px solid #ddd; border-radius: 6px; margin: 6px 0; cursor: pointer; }
+    li:hover { background: #f7f7f7; }
+    .badge { display: inline-block; font-size: 12px; padding: 2px 6px; border-radius: 4px; background: #eef; color: #335; margin-left: 8px; }
+    .muted { color: #666; font-size: 12px; }
+    pre { background: #fafafa; padding: 12px; border: 1px solid #eee; border-radius: 6px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>OptiLLM Semantic Cache Demo</h1>
+  <p class="muted">Qdrant: ${process.env.QDRANT_URL ? 'Configured' : 'Not set'} | Embeddings: ${process.env.OPENAI_API_KEY ? 'OpenAI' : 'Local'}</p>
+
+  <div class="row">
+    <div class="column">
+      <h3>Ask (cached)</h3>
+      <form id="askForm">
+        <textarea id="prompt" placeholder="Type your question... e.g., What is the shape of Earth?"></textarea>
+        <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+          <button type="submit">Ask</button>
+          <span id="status" class="muted"></span>
+        </div>
+      </form>
+      <div style="margin-top:12px;">
+        <h4>Response</h4>
+        <pre id="response">—</pre>
+      </div>
+    </div>
+    <div class="column">
+      <h3>Suggestions (live)</h3>
+      <ul id="suggestions"></ul>
+    </div>
+  </div>
+
+  <script>
+    const port = ${port};
+    const wsPort = ${wsPort};
+    const tenantId = ${JSON.stringify(tenantId)};
+    let ws;
+    let wsReady = false;
+    let debounceTimer;
+
+    function ensureWS() {
+      if (ws && wsReady) return;
+      const url = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.hostname + ':' + wsPort + '/ws/suggest?tenantId=' + encodeURIComponent(tenantId);
+      ws = new WebSocket(url);
+      ws.addEventListener('open', () => { wsReady = true; });
+      ws.addEventListener('close', () => { wsReady = false; });
+      ws.addEventListener('message', (ev) => {
+        try {
+          const data = JSON.parse(ev.data);
+          renderSuggestions(data.items || []);
+        } catch {}
+      });
+    }
+
+    function renderSuggestions(items) {
+      const ul = document.getElementById('suggestions');
+      ul.innerHTML = '';
+      for (const item of items) {
+        const li = document.createElement('li');
+        const title = item.prompt || '[No prompt stored]';
+        const score = typeof item.score === 'number' ? item.score.toFixed(3) : '—';
+        li.innerHTML = `${title} <span class="badge">sim ${score}</span>`;
+        li.addEventListener('click', () => {
+          document.getElementById('prompt').value = title;
+          document.getElementById('status').textContent = 'Selected a cached prompt; submit to reuse response.';
+        });
+        ul.appendChild(li);
+      }
+    }
+
+    document.getElementById('prompt').addEventListener('input', (e) => {
+      const text = e.target.value;
+      if (!text.trim()) { renderSuggestions([]); return; }
+      ensureWS();
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        if (ws && wsReady) {
+          ws.send(JSON.stringify({ text, limit: 6, minSimilarity: 0.7 }));
+        }
+      }, 200);
+    });
+
+    document.getElementById('askForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const prompt = document.getElementById('prompt').value;
+      document.getElementById('status').textContent = 'Sending...';
+      try {
+        const res = await fetch('/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, tenantId }) });
+        const data = await res.json();
+        document.getElementById('response').textContent = data.response || JSON.stringify(data, null, 2);
+        document.getElementById('status').textContent = data.cached ? 'Served from cache' : 'Generated via LLM';
+      } catch (err) {
+        document.getElementById('response').textContent = String(err);
+        document.getElementById('status').textContent = 'Error';
+      }
+    });
+  </script>
+</body>
+</html>`);
 });
 
 // Test endpoint
